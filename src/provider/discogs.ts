@@ -409,7 +409,7 @@ export class DiscogsProvider implements MusicMarketplaceProvider {
   }
 
   private async fetchWithRetries(path: string): Promise<Json> {
-    for (let attempt = 0; attempt <= this.config.maxRetries; attempt += 1) {
+    for (let attempt = 0; ; attempt += 1) {
       this.consumeQuota();
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), this.config.timeoutMs);
@@ -477,7 +477,6 @@ export class DiscogsProvider implements MusicMarketplaceProvider {
         clearTimeout(timeout);
       }
     }
-    throw new AppError('upstream_error', 'Discogs request failed');
   }
 
   private consumeQuota(): void {

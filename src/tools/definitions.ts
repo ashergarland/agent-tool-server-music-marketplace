@@ -314,7 +314,9 @@ export const comparePressingsTool = defineTool({
       .array(id)
       .min(2)
       .max(5)
-      .refine((ids) => new Set(ids).size === ids.length),
+      .refine((ids) => new Set(ids).size === ids.length, {
+        message: 'releaseIds must not contain duplicates',
+      }),
   }),
   outputSchema: z.object({
     releases: z.array(releaseSchema),
