@@ -85,6 +85,8 @@ export const createHttpServer = ({
       transports: ['stdio', 'streamable-http', 'http-openapi'],
       mutationsEnabled: config.guardrails.mutationsEnabled,
       confirmationRequired: config.guardrails.confirmationRequired,
+      marketplaceStatsEnabled: config.discogs.marketplaceStatsEnabled,
+      marketplaceListingsEnabled: config.discogs.marketplaceListingsEnabled,
       authMode: config.auth.mode,
     },
   }));

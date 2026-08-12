@@ -1,31 +1,37 @@
 import { describe, expect, it } from 'vitest';
 import { createApplication } from '../../src/app.js';
-import { MemoryProvider } from '../../src/provider/memory.js';
 import { createServices } from '../../src/services/index.js';
+import { FakeMusicProvider } from '../helpers/fake-provider.js';
 import { testConfig } from '../helpers/config.js';
 
-describe('example provider and services', () => {
-  it('lists, retrieves, updates, and rejects unknown items', async () => {
-    const services = createServices(testConfig({ MUTATIONS_ENABLED: true }), new MemoryProvider());
-    expect(await services.items.list()).toHaveLength(1);
-    expect((await services.items.get('example-1')).status).toBe('pending');
-    expect(
-      await services.items.updateStatus({
-        id: 'example-1',
-        status: 'complete',
-        confirm: true,
-        dryRun: false,
-      }),
-    ).toMatchObject({ performed: true, dryRun: false, item: { status: 'complete' } });
-    await expect(services.items.get('missing')).rejects.toMatchObject({ code: 'not_found' });
+describe('music marketplace services', () => {
+  it('retrieves, identifies, and compares releases', async () => {
+    const services = createServices(testConfig(), new FakeMusicProvider());
+    expect((await services.catalog.getRelease(1)).title).toBe('Example Album');
+    expect(await services.identification.identify({ barcode: '111' })).toMatchObject({
+      status: 'unique_match',
+    });
+    expect(await services.comparison.compare([1, 2])).toMatchObject({
+      differences: expect.arrayContaining([{ field: 'country', equal: false }]),
+    });
+  });
+
+  it('requires strong evidence and gates marketplace reads', async () => {
+    const services = createServices(testConfig(), new FakeMusicProvider());
+    await expect(services.identification.identify({ title: 'Example' })).rejects.toMatchObject({
+      code: 'bad_request',
+    });
+    expect(() => services.marketplace.getStats(1)).toThrowError(
+      'Marketplace statistics are disabled',
+    );
   });
 
   it('wires an injectable application', async () => {
     const application = createApplication({
       config: testConfig(),
-      provider: new MemoryProvider(),
+      provider: new FakeMusicProvider(),
     });
-    expect(application.registry.list()).toHaveLength(3);
+    expect(application.registry.list()).toHaveLength(13);
     await application.http.close();
   });
 });
