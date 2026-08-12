@@ -29,13 +29,18 @@ import type {
 type Json = Record<string, unknown>;
 type Fetch = typeof globalThis.fetch;
 
-const ATTRIBUTION = 'Metadata provided by Discogs. Learn more at https://www.discogs.com';
+const ATTRIBUTION =
+  "This application uses Discogs' API but is not affiliated with, sponsored or endorsed by Discogs.";
 const record = (value: unknown): Json => (value && typeof value === 'object' ? (value as Json) : {});
 const array = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
 const text = (value: unknown): string | undefined =>
   typeof value === 'string' && value.length > 0 ? value : undefined;
 const number = (value: unknown): number | undefined =>
   typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+const stringList = (value: unknown): string[] =>
+  typeof value === 'string'
+    ? [value]
+    : array(value).flatMap((entry) => (text(entry) ? [text(entry)!] : []));
 const requiredNumber = (value: unknown, field: string): number => {
   const parsed = number(value);
   if (parsed === undefined) throw new Error(`Invalid Discogs response: missing ${field}`);
@@ -133,8 +138,8 @@ const pagination = (value: unknown): Pagination => {
 const releaseSummary = (value: unknown): ReleaseSummary => {
   const data = record(value);
   const id = requiredNumber(data['id'], 'release id');
-  const labels = array(data['label']).flatMap((entry) => (text(entry) ? [text(entry)!] : []));
-  const catnos = array(data['catno']).flatMap((entry) => (text(entry) ? [text(entry)!] : []));
+  const labels = stringList(data['label']);
+  const catnos = stringList(data['catno']);
   return {
     id,
     title: requiredText(data['title'], 'release title'),
@@ -143,7 +148,7 @@ const releaseSummary = (value: unknown): ReleaseSummary => {
     ...(text(data['country']) ? { country: text(data['country']) } : {}),
     labels,
     catalogueNumbers: catnos,
-    formats: array(data['format']).flatMap((entry) => (text(entry) ? [text(entry)!] : [])),
+    formats: stringList(data['format']),
     resourceUrl: text(data['resource_url']) ?? `https://api.discogs.com/releases/${id}`,
   };
 };
@@ -323,7 +328,7 @@ export class DiscogsProvider implements MusicMarketplaceProvider {
       id: requiredNumber(data['id'], 'listing id'),
       releaseId: requiredNumber(release['id'], 'listing release id'),
       title: requiredText(release['description'], 'listing release description'),
-      condition: requiredText(data['condition'], 'listing condition'),
+      condition: requiredText(data['condition'] ?? data['media_condition'], 'listing condition'),
       ...(text(data['sleeve_condition']) ? { sleeveCondition: text(data['sleeve_condition']) } : {}),
       price: listingPrice,
       source: source(`https://www.discogs.com/sell/item/${listingId}`),
@@ -404,6 +409,10 @@ export class DiscogsProvider implements MusicMarketplaceProvider {
           signal: controller.signal,
         });
         const remaining = response.headers.get('x-discogs-ratelimit-remaining');
+        const total = response.headers.get('x-discogs-ratelimit');
+        if (remaining && total && /^\d+$/.test(remaining) && /^\d+$/.test(total)) {
+          this.windowCount = Math.max(this.windowCount, Number(total) - Number(remaining));
+        }
         this.logger.info({
           event: 'discogs.request',
           endpoint: path.split('?')[0],

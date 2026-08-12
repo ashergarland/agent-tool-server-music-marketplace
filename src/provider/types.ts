@@ -191,6 +191,7 @@ export interface ReleaseIdentificationResult {
   readonly candidates: ReleaseCandidate[];
   readonly reasonCodes: string[];
   readonly disclaimer: string;
+  readonly source: SourceMetadata;
 }
 
 export interface ComparisonField {

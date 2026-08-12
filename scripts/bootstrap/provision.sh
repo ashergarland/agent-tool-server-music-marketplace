@@ -6,6 +6,7 @@ LOCATION="${2:-eastus}"
 DEPLOYMENT_NAME="ats-${ENVIRONMENT_NAME}"
 IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short=12 HEAD)}"
 SECRET_NAME="tool-server-api-key"
+DISCOGS_SECRET_NAME="discogs-token"
 BOOTSTRAP_PRINCIPAL_OBJECT_ID="$(az ad signed-in-user show --query id -o tsv)"
 
 az bicep build --file infra/main.bicep >/dev/null
@@ -46,6 +47,17 @@ for attempt in {1..12}; do
   sleep 10
 done
 unset API_KEY
+
+if [[ -z "${DISCOGS_TOKEN:-}" ]]; then
+  printf 'Set DISCOGS_TOKEN in the protected environment before provisioning.\n' >&2
+  exit 1
+fi
+az keyvault secret set \
+  --vault-name "$KEY_VAULT_NAME" \
+  --name "$DISCOGS_SECRET_NAME" \
+  --value "$DISCOGS_TOKEN" \
+  --only-show-errors >/dev/null
+unset DISCOGS_TOKEN
 
 az acr build \
   --registry "$REGISTRY_NAME" \

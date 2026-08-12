@@ -12,7 +12,9 @@ describe('music marketplace services', () => {
       status: 'unique_match',
     });
     expect(await services.comparison.compare([1, 2])).toMatchObject({
-      differences: expect.arrayContaining([{ field: 'country', equal: false }]),
+      differences: expect.arrayContaining([
+        expect.objectContaining({ field: 'country', equal: false }),
+      ]),
     });
   });
 

@@ -55,6 +55,7 @@ export class IdentificationService {
         candidates,
         reasonCodes: ['ONE_STRONG_CANDIDATE'],
         disclaimer: this.disclaimer(),
+        source: page.source,
       };
     }
     if (credible.length > 0 || candidates.length > 1) {
@@ -63,6 +64,7 @@ export class IdentificationService {
         candidates,
         reasonCodes: ['MULTIPLE_PLAUSIBLE_CANDIDATES'],
         disclaimer: this.disclaimer(),
+        source: page.source,
       };
     }
     return {
@@ -70,6 +72,7 @@ export class IdentificationService {
       candidates,
       reasonCodes: ['NO_CANDIDATE_SATISFIED_STRICT_EVIDENCE'],
       disclaimer: this.disclaimer(),
+      source: page.source,
     };
   }
 

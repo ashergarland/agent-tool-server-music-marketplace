@@ -290,6 +290,7 @@ export const identifyReleaseTool = defineTool({
     ),
     reasonCodes: z.array(z.string()),
     disclaimer: z.string(),
+    source: sourceSchema,
   }),
   handler: (input, services) => services.identification.identify(input),
 });

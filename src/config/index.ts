@@ -30,7 +30,7 @@ export const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65_535).default(8080),
   HOST: z.string().min(1).default('0.0.0.0'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
-  SERVICE_NAME: z.string().min(1).default('agent-tool-server-template'),
+  SERVICE_NAME: z.string().min(1).default('agent-tool-server-music-marketplace'),
   SERVICE_VERSION: z.string().min(1).default('0.0.0-dev'),
   GIT_SHA: z.string().default('unknown'),
   PUBLIC_BASE_URL: z.url().optional(),
@@ -40,11 +40,8 @@ export const envSchema = z.object({
   API_KEYS: csv.default([]),
   MUTATIONS_ENABLED: booleanish.default(false),
   MUTATION_CONFIRMATION_REQUIRED: booleanish.default(true),
-  DISCOGS_TOKEN: z.string().min(1).default('development-token'),
-  DISCOGS_USER_AGENT: z
-    .string()
-    .min(10)
-    .default('agent-tool-server-music-marketplace/0.1.0 (development@example.com)'),
+  DISCOGS_TOKEN: z.string().min(1),
+  DISCOGS_USER_AGENT: z.string().min(10),
   DISCOGS_API_BASE_URL: z.url().default('https://api.discogs.com'),
   DISCOGS_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60_000).default(10_000),
   DISCOGS_MAX_RETRIES: z.coerce.number().int().min(0).max(5).default(2),
@@ -106,9 +103,6 @@ export const buildConfig = (env: Env): AppConfig => {
   if (env.AUTH_MODE === 'api-key') {
     if (env.API_KEYS.length === 0) {
       throw new ConfigurationError('AUTH_MODE=api-key requires API_KEYS');
-    }
-    if (env.NODE_ENV === 'production' && env.DISCOGS_TOKEN === 'development-token') {
-      throw new ConfigurationError('Production requires DISCOGS_TOKEN');
     }
     if (
       env.NODE_ENV === 'production' &&

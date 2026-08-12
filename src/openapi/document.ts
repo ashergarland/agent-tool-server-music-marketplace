@@ -122,7 +122,7 @@ export const buildOpenApiDocument = (config: AppConfig, registry: ToolRegistry):
   return {
     openapi: '3.1.0',
     info: {
-      title: 'Discogs Music Marketplace Agent Tool Server',
+      title: 'Music Marketplace Agent Tool Server',
       version: config.service.version,
       description:
         'Read-only Discogs database and feature-gated marketplace tools generated from one typed registry.',

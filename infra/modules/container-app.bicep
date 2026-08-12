@@ -5,12 +5,13 @@ param containerImage string
 param registryServer string
 param identityId string
 param apiKeySecretUri string
+param discogsTokenSecretUri string
+param discogsUserAgent string
 param logAnalyticsCustomerId string
 @secure()
 param logAnalyticsSharedKey string
 @secure()
 param applicationInsightsConnectionString string
-param mutationsEnabled bool
 param minReplicas int
 param maxReplicas int
 param tags object
@@ -62,6 +63,11 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
           keyVaultUrl: apiKeySecretUri
           identity: identityId
         }
+        {
+          name: 'discogs-token'
+          keyVaultUrl: discogsTokenSecretUri
+          identity: identityId
+        }
       ]
     }
     template: {
@@ -87,8 +93,20 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
               secretRef: 'api-key'
             }
             {
-              name: 'MUTATIONS_ENABLED'
-              value: string(mutationsEnabled)
+              name: 'DISCOGS_TOKEN'
+              secretRef: 'discogs-token'
+            }
+            {
+              name: 'DISCOGS_USER_AGENT'
+              value: discogsUserAgent
+            }
+            {
+              name: 'DISCOGS_MARKETPLACE_STATS_ENABLED'
+              value: 'false'
+            }
+            {
+              name: 'DISCOGS_MARKETPLACE_LISTINGS_ENABLED'
+              value: 'false'
             }
             {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
