@@ -51,8 +51,6 @@ describe('configuration', () => {
   });
 
   it('requires Discogs credentials', () => {
-    expect(() =>
-      envSchema.parse({ NODE_ENV: 'test', AUTH_MODE: 'disabled' }),
-    ).toThrow();
+    expect(() => envSchema.parse({ NODE_ENV: 'test', AUTH_MODE: 'disabled' })).toThrow();
   });
 });

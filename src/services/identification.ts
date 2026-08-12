@@ -9,7 +9,10 @@ import type {
 } from '../provider/types.js';
 
 const normalize = (value: string): string =>
-  value.normalize('NFKD').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+  value
+    .normalize('NFKD')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, '');
 const same = (left: string, right: string): boolean => normalize(left) === normalize(right);
 const includes = (values: readonly string[], expected: string): boolean =>
   values.some((value) => same(value, expected));
@@ -43,12 +46,16 @@ export class IdentificationService {
       ...(evidence.year ? { year: evidence.year } : {}),
       ...(evidence.format ? { format: evidence.format } : {}),
     });
-    const detailed = await Promise.all(page.items.slice(0, 10).map((item) => this.provider.getRelease(item.id)));
+    const detailed = await Promise.all(
+      page.items.slice(0, 10).map((item) => this.provider.getRelease(item.id)),
+    );
     const candidates = detailed
       .map((release) => this.evaluate(release, evidence))
       .filter((candidate) => candidate.score > 0)
       .sort((left, right) => right.score - left.score || left.release.id - right.release.id);
-    const credible = candidates.filter((candidate) => candidate.conflictingFields.length === 0 && candidate.score >= 70);
+    const credible = candidates.filter(
+      (candidate) => candidate.conflictingFields.length === 0 && candidate.score >= 70,
+    );
     if (credible.length === 1 && (candidates[1]?.score ?? 0) < credible[0]!.score) {
       return {
         status: 'unique_match',

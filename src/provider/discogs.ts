@@ -31,7 +31,8 @@ type Fetch = typeof globalThis.fetch;
 
 const ATTRIBUTION =
   "This application uses Discogs' API but is not affiliated with, sponsored or endorsed by Discogs.";
-const record = (value: unknown): Json => (value && typeof value === 'object' ? (value as Json) : {});
+const record = (value: unknown): Json =>
+  value && typeof value === 'object' ? (value as Json) : {};
 const array = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
 const text = (value: unknown): string | undefined =>
   typeof value === 'string' && value.length > 0 ? value : undefined;
@@ -102,7 +103,9 @@ const format = (value: unknown): ReleaseFormat => {
   return {
     name: requiredText(data['name'], 'format name'),
     quantity: text(data['qty']) ?? '1',
-    descriptions: array(data['descriptions']).flatMap((entry) => (text(entry) ? [text(entry)!] : [])),
+    descriptions: array(data['descriptions']).flatMap((entry) =>
+      text(entry) ? [text(entry)!] : [],
+    ),
     ...(text(data['text']) ? { text: text(data['text']) } : {}),
   };
 };
@@ -144,7 +147,9 @@ const releaseSummary = (value: unknown): ReleaseSummary => {
     id,
     title: requiredText(data['title'], 'release title'),
     ...(text(data['artist']) ? { artist: text(data['artist']) } : {}),
-    ...(number(data['year'] ?? data['released']) ? { year: number(data['year'] ?? data['released']) } : {}),
+    ...(number(data['year'] ?? data['released'])
+      ? { year: number(data['year'] ?? data['released']) }
+      : {}),
     ...(text(data['country']) ? { country: text(data['country']) } : {}),
     labels,
     catalogueNumbers: catnos,
@@ -303,7 +308,10 @@ export class DiscogsProvider implements MusicMarketplaceProvider {
     };
   }
 
-  public async getMarketplaceStats(releaseId: number, currency?: string): Promise<MarketplaceStats> {
+  public async getMarketplaceStats(
+    releaseId: number,
+    currency?: string,
+  ): Promise<MarketplaceStats> {
     const params = new URLSearchParams();
     this.append(params, 'curr_abbr', currency);
     const suffix = params.size > 0 ? `?${params.toString()}` : '';
@@ -329,7 +337,9 @@ export class DiscogsProvider implements MusicMarketplaceProvider {
       releaseId: requiredNumber(release['id'], 'listing release id'),
       title: requiredText(release['description'], 'listing release description'),
       condition: requiredText(data['condition'] ?? data['media_condition'], 'listing condition'),
-      ...(text(data['sleeve_condition']) ? { sleeveCondition: text(data['sleeve_condition']) } : {}),
+      ...(text(data['sleeve_condition'])
+        ? { sleeveCondition: text(data['sleeve_condition']) }
+        : {}),
       price: listingPrice,
       source: source(`https://www.discogs.com/sell/item/${listingId}`),
       disclaimer: 'Live marketplace listing observed at retrieval time; availability may change.',
@@ -355,11 +365,16 @@ export class DiscogsProvider implements MusicMarketplaceProvider {
     this.append(params, 'country', options.country);
     this.append(params, 'year', options.year);
     this.append(params, 'format', options.format);
-    const data = await this.request(`/database/search?${params.toString()}`, this.config.searchCacheTtlMs);
+    const data = await this.request(
+      `/database/search?${params.toString()}`,
+      this.config.searchCacheTtlMs,
+    );
     return {
       items: array(data['results']).map(mapper),
       pagination: pagination(data['pagination']),
-      source: source(`https://www.discogs.com/search/?q=${encodeURIComponent(options.query)}&type=${type}`),
+      source: source(
+        `https://www.discogs.com/search/?q=${encodeURIComponent(options.query)}&type=${type}`,
+      ),
     };
   }
 
@@ -381,7 +396,7 @@ export class DiscogsProvider implements MusicMarketplaceProvider {
       .then((value) => {
         if (ttlMs > 0 && this.config.cacheMaxEntries > 0) {
           if (this.cache.size >= this.config.cacheMaxEntries) {
-            const oldest = this.cache.keys().next().value as string | undefined;
+            const oldest = this.cache.keys().next().value;
             if (oldest) this.cache.delete(oldest);
           }
           this.cache.set(path, { value, expiresAt: Date.now() + ttlMs });

@@ -8,7 +8,6 @@ import type {
   MarketplaceStats,
   Master,
   MasterSummary,
-  MasterVersionsOptions,
   MusicMarketplaceProvider,
   Paged,
   Release,
@@ -35,9 +34,7 @@ export const testRelease = (id = 1): Release => ({
   resourceUrl: `https://api.discogs.com/releases/${id}`,
   masterId: 10,
   artists: [{ id: 2, name: 'Example Artist' }],
-  labelCredits: [
-    { id: 3, name: 'Example Label', catalogueNumber: id === 1 ? 'CAT-1' : 'CAT-2' },
-  ],
+  labelCredits: [{ id: 3, name: 'Example Label', catalogueNumber: id === 1 ? 'CAT-1' : 'CAT-2' }],
   formatDetails: [{ name: 'Vinyl', quantity: '1', descriptions: ['LP'] }],
   identifiers: [{ type: 'Barcode', value: id === 1 ? '111' : '222' }],
   tracklist: [{ position: 'A1', title: 'Track One' }],
@@ -56,12 +53,14 @@ export class FakeMusicProvider implements MusicMarketplaceProvider {
     [2, testRelease(2)],
   ]);
 
-  public searchArtists(_options: SearchOptions): Promise<Paged<ArtistSummary>> {
+  public searchArtists(): Promise<Paged<ArtistSummary>> {
     return Promise.resolve(paged([{ id: 2, name: 'Example Artist', resourceUrl: 'artist-url' }]));
   }
-  public searchMasters(_options: SearchOptions): Promise<Paged<MasterSummary>> {
+  public searchMasters(): Promise<Paged<MasterSummary>> {
     return Promise.resolve(
-      paged([{ id: 10, title: 'Example Album', artist: 'Example Artist', resourceUrl: 'master-url' }]),
+      paged([
+        { id: 10, title: 'Example Album', artist: 'Example Artist', resourceUrl: 'master-url' },
+      ]),
     );
   }
   public searchReleases(options: SearchOptions): Promise<Paged<ReleaseSummary>> {
@@ -73,7 +72,7 @@ export class FakeMusicProvider implements MusicMarketplaceProvider {
     );
     return Promise.resolve(paged(releases));
   }
-  public searchLabels(_options: SearchOptions): Promise<Paged<LabelSummary>> {
+  public searchLabels(): Promise<Paged<LabelSummary>> {
     return Promise.resolve(paged([{ id: 3, name: 'Example Label', resourceUrl: 'label-url' }]));
   }
   public getArtist(id: number): Promise<Artist> {
@@ -104,10 +103,7 @@ export class FakeMusicProvider implements MusicMarketplaceProvider {
     if (!release) return Promise.reject(notFound('Release not found'));
     return Promise.resolve(release);
   }
-  public listMasterVersions(
-    _id: number,
-    _options: MasterVersionsOptions,
-  ): Promise<Paged<ReleaseSummary>> {
+  public listMasterVersions(): Promise<Paged<ReleaseSummary>> {
     return Promise.resolve(paged([...this.releases.values()]));
   }
   public getMarketplaceStats(releaseId: number): Promise<MarketplaceStats> {

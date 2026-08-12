@@ -58,4 +58,33 @@ describe('tool registry', () => {
     expect(() => new ToolRegistry([definition as never, definition as never])).toThrow('Duplicate');
     expect(() => createToolRegistry().get('missing')).toThrow(AppError);
   });
+
+  it('invokes every declarative tool through the shared registry', async () => {
+    const config = testConfig({
+      DISCOGS_MARKETPLACE_STATS_ENABLED: true,
+      DISCOGS_MARKETPLACE_LISTINGS_ENABLED: true,
+    });
+    const services = createServices(config, new FakeMusicProvider());
+    const registry = createToolRegistry();
+    const calls: Record<string, unknown> = {
+      discogs_search_artists: { query: 'Artist' },
+      discogs_search_masters: { query: 'Album' },
+      discogs_search_releases: { query: 'Album' },
+      discogs_search_labels: { query: 'Label' },
+      discogs_get_release: { releaseId: 1 },
+      discogs_get_master: { masterId: 10 },
+      discogs_list_master_versions: { masterId: 10 },
+      discogs_get_artist: { artistId: 2 },
+      discogs_get_label: { labelId: 3 },
+      discogs_identify_release: { barcode: '111' },
+      discogs_compare_pressings: { releaseIds: [1, 2] },
+      discogs_get_marketplace_stats: { releaseId: 1 },
+      discogs_get_marketplace_listing: { listingId: 5 },
+    };
+    for (const tool of registry.list()) {
+      await expect(
+        registry.invoke(tool.name, calls[tool.name], services, context),
+      ).resolves.toBeDefined();
+    }
+  });
 });

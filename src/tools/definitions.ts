@@ -163,7 +163,8 @@ export const searchReleasesTool = defineTool({
   name: 'discogs_search_releases',
   title: 'Search Discogs releases',
   summary: 'Search pressing-level Discogs release metadata.',
-  description: 'Returns candidates and never implies that one pressing was definitively identified.',
+  description:
+    'Returns candidates and never implies that one pressing was definitively identified.',
   kind: 'read',
   inputSchema: z.object({ query, ...searchFilters, ...paginationInput }),
   outputSchema: pageOutput(releaseSummarySchema),
@@ -185,11 +186,14 @@ export const getReleaseTool = defineTool({
   name: 'discogs_get_release',
   title: 'Get a Discogs release',
   summary: 'Retrieve exact pressing-level metadata by Discogs release ID.',
-  description: 'Returns normalized metadata and Discogs attribution; it does not authenticate an item.',
+  description:
+    'Returns normalized metadata and Discogs attribution; it does not authenticate an item.',
   kind: 'read',
   inputSchema: z.object({ releaseId: id }),
   outputSchema: z.object({ release: releaseSchema }),
-  handler: async (input, services) => ({ release: await services.catalog.getRelease(input.releaseId) }),
+  handler: async (input, services) => ({
+    release: await services.catalog.getRelease(input.releaseId),
+  }),
 });
 
 export const getMasterTool = defineTool({
@@ -207,7 +211,9 @@ export const getMasterTool = defineTool({
       source: sourceSchema,
     }),
   }),
-  handler: async (input, services) => ({ master: await services.catalog.getMaster(input.masterId) }),
+  handler: async (input, services) => ({
+    master: await services.catalog.getMaster(input.masterId),
+  }),
 });
 
 export const listMasterVersionsTool = defineTool({
@@ -244,7 +250,9 @@ export const getArtistTool = defineTool({
       source: sourceSchema,
     }),
   }),
-  handler: async (input, services) => ({ artist: await services.catalog.getArtist(input.artistId) }),
+  handler: async (input, services) => ({
+    artist: await services.catalog.getArtist(input.artistId),
+  }),
 });
 
 export const getLabelTool = defineTool({
@@ -301,7 +309,13 @@ export const comparePressingsTool = defineTool({
   summary: 'Compare two to five explicit Discogs release IDs.',
   description: 'Compares normalized metadata while preserving unknown values.',
   kind: 'read',
-  inputSchema: z.object({ releaseIds: z.array(id).min(2).max(5).refine((ids) => new Set(ids).size === ids.length) }),
+  inputSchema: z.object({
+    releaseIds: z
+      .array(id)
+      .min(2)
+      .max(5)
+      .refine((ids) => new Set(ids).size === ids.length),
+  }),
   outputSchema: z.object({
     releases: z.array(releaseSchema),
     differences: z.array(
@@ -322,7 +336,13 @@ export const getMarketplaceStatsTool = defineTool({
   summary: 'Retrieve current officially supported marketplace statistics for a release.',
   description: 'Feature-gated current asking-price data; never a valuation or sales history.',
   kind: 'read',
-  inputSchema: z.object({ releaseId: id, currency: z.string().regex(/^[A-Z]{3}$/).optional() }),
+  inputSchema: z.object({
+    releaseId: id,
+    currency: z
+      .string()
+      .regex(/^[A-Z]{3}$/)
+      .optional(),
+  }),
   outputSchema: z.object({
     releaseId: z.number().int(),
     numberForSale: z.number().int(),
