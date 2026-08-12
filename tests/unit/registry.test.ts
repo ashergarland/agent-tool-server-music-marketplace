@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { AppError } from '../../src/errors.js';
-import { MemoryProvider } from '../../src/provider/memory.js';
 import { createServices } from '../../src/services/index.js';
 import { defineTool } from '../../src/tools/definitions.js';
 import { createToolRegistry, ToolRegistry } from '../../src/tools/registry.js';
 import { testConfig } from '../helpers/config.js';
+import { FakeMusicProvider } from '../helpers/fake-provider.js';
 
 const context = { requestId: 'test', principal: 'tester' };
 
@@ -13,17 +13,27 @@ describe('tool registry', () => {
   it('exposes unique definitions and schemas', () => {
     const registry = createToolRegistry();
     expect(registry.list().map((tool) => tool.name)).toEqual([
-      'example_list_items',
-      'example_get_item',
-      'example_update_item',
+      'discogs_search_artists',
+      'discogs_search_masters',
+      'discogs_search_releases',
+      'discogs_search_labels',
+      'discogs_get_release',
+      'discogs_get_master',
+      'discogs_list_master_versions',
+      'discogs_get_artist',
+      'discogs_get_label',
+      'discogs_identify_release',
+      'discogs_compare_pressings',
+      'discogs_get_marketplace_stats',
+      'discogs_get_marketplace_listing',
     ]);
     expect(registry.list().every((tool) => tool.inputJsonSchema['type'] === 'object')).toBe(true);
   });
 
   it('validates input and output', async () => {
-    const services = createServices(testConfig(), new MemoryProvider());
+    const services = createServices(testConfig(), new FakeMusicProvider());
     await expect(
-      createToolRegistry().invoke('example_get_item', {}, services, context),
+      createToolRegistry().invoke('discogs_get_release', {}, services, context),
     ).rejects.toMatchObject({
       code: 'bad_request',
     });
@@ -47,5 +57,34 @@ describe('tool registry', () => {
     const definition = createToolRegistry().list()[0]!;
     expect(() => new ToolRegistry([definition as never, definition as never])).toThrow('Duplicate');
     expect(() => createToolRegistry().get('missing')).toThrow(AppError);
+  });
+
+  it('invokes every declarative tool through the shared registry', async () => {
+    const config = testConfig({
+      DISCOGS_MARKETPLACE_STATS_ENABLED: true,
+      DISCOGS_MARKETPLACE_LISTINGS_ENABLED: true,
+    });
+    const services = createServices(config, new FakeMusicProvider());
+    const registry = createToolRegistry();
+    const calls: Record<string, unknown> = {
+      discogs_search_artists: { query: 'Artist' },
+      discogs_search_masters: { query: 'Album' },
+      discogs_search_releases: { query: 'Album' },
+      discogs_search_labels: { query: 'Label' },
+      discogs_get_release: { releaseId: 1 },
+      discogs_get_master: { masterId: 10 },
+      discogs_list_master_versions: { masterId: 10 },
+      discogs_get_artist: { artistId: 2 },
+      discogs_get_label: { labelId: 3 },
+      discogs_identify_release: { barcode: '111' },
+      discogs_compare_pressings: { releaseIds: [1, 2] },
+      discogs_get_marketplace_stats: { releaseId: 1 },
+      discogs_get_marketplace_listing: { listingId: 5 },
+    };
+    for (const tool of registry.list()) {
+      await expect(
+        registry.invoke(tool.name, calls[tool.name], services, context),
+      ).resolves.toBeDefined();
+    }
   });
 });

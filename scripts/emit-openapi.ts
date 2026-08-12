@@ -9,6 +9,8 @@ const config = buildConfig(
     AUTH_MODE: 'disabled',
     SERVICE_VERSION: process.env['SERVICE_VERSION'] ?? '0.1.0',
     PUBLIC_BASE_URL: process.env['PUBLIC_BASE_URL'] ?? 'http://localhost:8080',
+    DISCOGS_TOKEN: 'openapi-generation-only',
+    DISCOGS_USER_AGENT: 'music-marketplace-openapi/0.1 (docs@example.com)',
   }),
 );
 const document = `${JSON.stringify(buildOpenApiDocument(config, createToolRegistry()), null, 2)}\n`;

@@ -1,26 +1,19 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.ashergarland/agent-tool-server-template",
-  "description": "Replace this description with the capability supplied by your tool server.",
+  "name": "io.github.ashergarland/agent-tool-server-music-marketplace",
+  "description": "Read-only Discogs catalog identification, pressing comparison, and gated marketplace tools.",
   "repository": {
-    "url": "https://github.com/ashergarland/agent-tool-server-template",
+    "url": "https://github.com/ashergarland/agent-tool-server-music-marketplace",
     "source": "github"
   },
   "version": "0.1.0",
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "agent-tool-server-template",
+      "identifier": "agent-tool-server-music-marketplace",
       "version": "0.1.0",
-      "transport": {
-        "type": "stdio"
-      }
+      "transport": { "type": "stdio" }
     }
   ],
-  "remotes": [
-    {
-      "type": "streamable-http",
-      "url": "https://tools.example.com/mcp"
-    }
-  ]
+  "remotes": []
 }

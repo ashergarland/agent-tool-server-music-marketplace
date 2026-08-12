@@ -14,11 +14,14 @@ param containerImage string = 'replace.invalid/agent-tool-server:replace-me'
 @description('False for the prerequisite pass; true only after the Key Vault secret and image exist.')
 param deployApp bool = false
 
-@description('Enable state-changing tools at the process boundary.')
-param mutationsEnabled bool = false
-
 @description('Existing Key Vault secret name used by the application.')
 param apiKeySecretName string = 'tool-server-api-key'
+
+@description('Existing Key Vault secret name containing the Discogs personal access token.')
+param discogsTokenSecretName string = 'discogs-token'
+
+@description('Descriptive Discogs User-Agent including an application identity and contact.')
+param discogsUserAgent string = 'agent-tool-server-music-marketplace/0.1.0 (contact@example.com)'
 
 @description('Object ID allowed to seed the Key Vault secret during bootstrap; leave blank outside bootstrap.')
 param bootstrapPrincipalObjectId string = ''
@@ -29,7 +32,7 @@ param minReplicas int = 0
 
 @description('Maximum replicas.')
 @minValue(1)
-param maxReplicas int = 3
+param maxReplicas int = 1
 
 var suffix = uniqueString(subscription().id, environmentName)
 var resourceGroupName = 'rg-ats-${environmentName}-${suffix}'
@@ -99,10 +102,11 @@ module app 'modules/container-app.bicep' = if (deployApp) {
     registryServer: registry.outputs.loginServer
     identityId: identity.outputs.id
     apiKeySecretUri: '${keyVault.outputs.vaultUri}secrets/${apiKeySecretName}'
+    discogsTokenSecretUri: '${keyVault.outputs.vaultUri}secrets/${discogsTokenSecretName}'
+    discogsUserAgent: discogsUserAgent
     logAnalyticsCustomerId: observability.outputs.workspaceCustomerId
     logAnalyticsSharedKey: observability.outputs.workspaceSharedKey
     applicationInsightsConnectionString: observability.outputs.applicationInsightsConnectionString
-    mutationsEnabled: mutationsEnabled
     minReplicas: minReplicas
     maxReplicas: maxReplicas
     tags: resourceGroup.tags

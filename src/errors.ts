@@ -3,6 +3,8 @@ export type ErrorCode =
   | 'unauthorized'
   | 'forbidden'
   | 'not_found'
+  | 'ambiguous'
+  | 'feature_disabled'
   | 'rate_limited'
   | 'upstream_error'
   | 'internal_error';
@@ -12,6 +14,8 @@ const statusByCode: Readonly<Record<ErrorCode, number>> = {
   unauthorized: 401,
   forbidden: 403,
   not_found: 404,
+  ambiguous: 409,
+  feature_disabled: 403,
   rate_limited: 429,
   upstream_error: 502,
   internal_error: 500,
@@ -39,6 +43,10 @@ export const unauthorized = (message: string): AppError => new AppError('unautho
 export const forbidden = (message: string): AppError => new AppError('forbidden', message);
 export const notFound = (message: string, details?: unknown): AppError =>
   new AppError('not_found', message, details);
+export const ambiguous = (message: string, details?: unknown): AppError =>
+  new AppError('ambiguous', message, details);
+export const featureDisabled = (message: string): AppError =>
+  new AppError('feature_disabled', message);
 
 export const toAppError = (error: unknown): AppError =>
   error instanceof AppError

@@ -27,6 +27,7 @@ const errorResponses: JsonObject = Object.fromEntries(
     [401, 'Missing or invalid credentials'],
     [403, 'Mutation not permitted'],
     [404, 'Unknown tool or resource'],
+    [409, 'Ambiguous match'],
     [429, 'Rate limited'],
     [500, 'Tool server failure'],
     [502, 'Provider failure'],
@@ -121,9 +122,10 @@ export const buildOpenApiDocument = (config: AppConfig, registry: ToolRegistry):
   return {
     openapi: '3.1.0',
     info: {
-      title: 'Agent Tool Server Template',
+      title: 'Music Marketplace Agent Tool Server',
       version: config.service.version,
-      description: 'Replaceable tool server infrastructure generated from one typed tool registry.',
+      description:
+        'Read-only Discogs database and feature-gated marketplace tools generated from one typed registry.',
     },
     servers: [{ url: config.service.publicBaseUrl ?? `http://localhost:${config.http.port}` }],
     security: config.auth.mode === 'disabled' ? [] : [{ bearerAuth: [] }],

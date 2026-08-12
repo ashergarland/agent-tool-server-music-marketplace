@@ -2,10 +2,10 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createMcpServer } from '../../src/mcp/server.js';
-import { MemoryProvider } from '../../src/provider/memory.js';
 import { createServices } from '../../src/services/index.js';
 import { createToolRegistry } from '../../src/tools/registry.js';
 import { testConfig } from '../helpers/config.js';
+import { FakeMusicProvider } from '../helpers/fake-provider.js';
 
 const closeables: { close(): Promise<void> }[] = [];
 
@@ -17,7 +17,7 @@ describe('MCP adapter', () => {
     const server = createMcpServer(
       config,
       createToolRegistry(),
-      createServices(config, new MemoryProvider()),
+      createServices(config, new FakeMusicProvider()),
       { requestId: 'mcp-test', principal: 'test-client' },
     );
     const client = new Client({ name: 'test-client', version: '1.0.0' });
@@ -26,13 +26,13 @@ describe('MCP adapter', () => {
     await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
 
     const tools = await client.listTools();
-    expect(tools.tools.map((tool) => tool.name)).toContain('example_list_items');
+    expect(tools.tools.map((tool) => tool.name)).toContain('discogs_search_releases');
     const result = await client.callTool({
-      name: 'example_get_item',
-      arguments: { id: 'example-1' },
+      name: 'discogs_get_release',
+      arguments: { releaseId: 1 },
     });
     expect(result.isError).not.toBe(true);
-    const failure = await client.callTool({ name: 'example_get_item', arguments: {} });
+    const failure = await client.callTool({ name: 'discogs_get_release', arguments: {} });
     expect(failure.isError).toBe(true);
   });
 });

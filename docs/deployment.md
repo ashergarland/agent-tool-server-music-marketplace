@@ -1,57 +1,35 @@
-# Azure Container Apps deployment example
+# Azure Container Apps deployment
 
-This example is replaceable hosting scaffolding. It does not add Azure product logic to the tool
-server.
+## Compliance prerequisite
 
-## Prerequisites
+Do not publicly or commercially deploy until Discogs confirms the intended hosted use,
+redistribution, attribution, comparison, caching, and marketplace behavior. Keep both marketplace
+feature flags and all cache TTLs at zero unless the approval explicitly permits them.
 
-- Azure CLI with the Bicep CLI installed
-- Docker
-- permission to create subscription deployments, a resource group, role assignments, and the
-  included resources
-- a signed-in human user that can be granted Key Vault Secrets Officer during bootstrap
-- a selected subscription (`az account set --subscription ...`)
+## Provision
 
-Do not place subscription IDs, tenant IDs, credentials, or generated deployment names in tracked
-files.
-
-## Safe two-pass provisioning
+Install Azure CLI/Bicep and Docker, select a subscription, and export credentials only in the local
+protected environment:
 
 ```bash
+export DISCOGS_TOKEN='...'
 ./scripts/bootstrap/provision.sh dev eastus
 ```
 
-The script:
+The two-pass bootstrap provisions shared resources, stores separate caller API-key and Discogs-token
+secrets in Key Vault, builds an immutable image, and creates the app only after both secrets exist.
+Neither secret is placed in source, Bicep parameters, image layers, or command output.
 
-1. validates and deploys shared resources with `deployApp=false`;
-2. prompts for or generates an API key and writes it directly to Key Vault;
-3. signs in to the created registry, builds and pushes the image;
-4. deploys again with `deployApp=true`.
+Set `discogsUserAgent` to an application identity and monitored contact before production. The
+default placeholder is not suitable for deployment.
 
-The first pass prevents Container Apps from repeatedly starting with a missing Key Vault secret.
-The second pass adds the app, probes, scale rules, and monitoring after its prerequisites exist.
+## Runtime policy
 
-For automation, set `API_KEY` in the job's protected secret environment and set `IMAGE_TAG` to an
-immutable commit SHA. Do not use `latest` for production releases.
+The Container App uses a user-assigned managed identity for ACR and Key Vault, HTTPS-only ingress,
+an unprivileged container, health probes, Log Analytics, and Application Insights. Maximum replicas
+defaults to one because the outbound Discogs request budget is process-local. Add a distributed
+limiter before horizontal scaling.
 
-## Identity and secrets
-
-The Container App uses a user-assigned managed identity to pull from ACR and read the Key Vault
-secret. No registry password or API key is embedded in Bicep. Add provider-specific role
-assignments in a separate module and grant only the actions required by registered tools.
-
-The interactive bootstrap user receives Key Vault Secrets Officer so it can seed and rotate this
-secret. Remove that assignment after handoff if a separate deployment identity manages rotation.
-
-## Operations
-
-The app scales from zero to three replicas and uses `/health` for liveness and readiness. Log
-Analytics and workspace-based Application Insights are provisioned. Configure alert receivers in
-your organization rather than committing personal addresses.
-
-Rotate the API key by adding the replacement to `API_KEYS`, deploying, moving clients, then removing
-the old key. Key Vault references are versionless; create a new revision or restart replicas after
-rotation.
-
-Destroy the example by deleting its generated resource group after confirming it contains no
-shared resources.
+Caller API keys and the Discogs token rotate independently. Key Vault references are versionless;
+create a new revision or restart replicas after rotation. Alert on Discogs 401 responses, sustained
+429 responses, low remaining quota, and retry exhaustion.

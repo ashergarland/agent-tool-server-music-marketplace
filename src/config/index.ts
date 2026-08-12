@@ -30,7 +30,7 @@ export const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65_535).default(8080),
   HOST: z.string().min(1).default('0.0.0.0'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
-  SERVICE_NAME: z.string().min(1).default('agent-tool-server-template'),
+  SERVICE_NAME: z.string().min(1).default('agent-tool-server-music-marketplace'),
   SERVICE_VERSION: z.string().min(1).default('0.0.0-dev'),
   GIT_SHA: z.string().default('unknown'),
   PUBLIC_BASE_URL: z.url().optional(),
@@ -40,6 +40,17 @@ export const envSchema = z.object({
   API_KEYS: csv.default([]),
   MUTATIONS_ENABLED: booleanish.default(false),
   MUTATION_CONFIRMATION_REQUIRED: booleanish.default(true),
+  DISCOGS_TOKEN: z.string().min(1),
+  DISCOGS_USER_AGENT: z.string().min(10),
+  DISCOGS_API_BASE_URL: z.url().default('https://api.discogs.com'),
+  DISCOGS_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60_000).default(10_000),
+  DISCOGS_MAX_RETRIES: z.coerce.number().int().min(0).max(5).default(2),
+  DISCOGS_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(60),
+  DISCOGS_CACHE_TTL_MS: z.coerce.number().int().min(0).default(0),
+  DISCOGS_SEARCH_CACHE_TTL_MS: z.coerce.number().int().min(0).default(0),
+  DISCOGS_CACHE_MAX_ENTRIES: z.coerce.number().int().min(0).max(10_000).default(500),
+  DISCOGS_MARKETPLACE_STATS_ENABLED: booleanish.default(false),
+  DISCOGS_MARKETPLACE_LISTINGS_ENABLED: booleanish.default(false),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -66,6 +77,19 @@ export interface AppConfig {
     readonly mutationsEnabled: boolean;
     readonly confirmationRequired: boolean;
   };
+  readonly discogs: {
+    readonly token: string;
+    readonly userAgent: string;
+    readonly apiBaseUrl: string;
+    readonly timeoutMs: number;
+    readonly maxRetries: number;
+    readonly rateLimitMax: number;
+    readonly cacheTtlMs: number;
+    readonly searchCacheTtlMs: number;
+    readonly cacheMaxEntries: number;
+    readonly marketplaceStatsEnabled: boolean;
+    readonly marketplaceListingsEnabled: boolean;
+  };
 }
 
 export class ConfigurationError extends Error {
@@ -79,6 +103,12 @@ export const buildConfig = (env: Env): AppConfig => {
   if (env.AUTH_MODE === 'api-key') {
     if (env.API_KEYS.length === 0) {
       throw new ConfigurationError('AUTH_MODE=api-key requires API_KEYS');
+    }
+    if (
+      env.NODE_ENV === 'production' &&
+      new URL(env.DISCOGS_API_BASE_URL).origin !== 'https://api.discogs.com'
+    ) {
+      throw new ConfigurationError('Production requires the official Discogs API base URL');
     }
     if (env.API_KEYS.some((key) => key.length < 32)) {
       throw new ConfigurationError('Every API key must be at least 32 characters');
@@ -106,6 +136,19 @@ export const buildConfig = (env: Env): AppConfig => {
     guardrails: {
       mutationsEnabled: env.MUTATIONS_ENABLED,
       confirmationRequired: env.MUTATION_CONFIRMATION_REQUIRED,
+    },
+    discogs: {
+      token: env.DISCOGS_TOKEN,
+      userAgent: env.DISCOGS_USER_AGENT,
+      apiBaseUrl: env.DISCOGS_API_BASE_URL,
+      timeoutMs: env.DISCOGS_TIMEOUT_MS,
+      maxRetries: env.DISCOGS_MAX_RETRIES,
+      rateLimitMax: env.DISCOGS_RATE_LIMIT_MAX,
+      cacheTtlMs: env.DISCOGS_CACHE_TTL_MS,
+      searchCacheTtlMs: env.DISCOGS_SEARCH_CACHE_TTL_MS,
+      cacheMaxEntries: env.DISCOGS_CACHE_MAX_ENTRIES,
+      marketplaceStatsEnabled: env.DISCOGS_MARKETPLACE_STATS_ENABLED,
+      marketplaceListingsEnabled: env.DISCOGS_MARKETPLACE_LISTINGS_ENABLED,
     },
   };
 };
